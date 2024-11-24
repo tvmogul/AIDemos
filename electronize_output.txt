@@ -1,0 +1,38 @@
+Start Electron Desktop Application...
+Arguments: 
+	watch = 
+node_modules missing in: C:\AProjects\Electron\AIDemos\AIDemos\obj\Host\node_modules
+Start npm install...
+npm install
+
+up to date, audited 158 packages in 1s
+
+26 packages are looking for funding
+  run `npm fund` for details
+
+2 vulnerabilities (1 moderate, 1 high)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+
+ElectronHostHook handling started...
+Invoke electron.cmd - in dir: C:\AProjects\Electron\AIDemos\AIDemos\obj\Host\node_modules\.bin
+electron.cmd "..\..\main.js"  --watch=true
+
+Electron Socket IO Port: 8000
+Electron Socket started on port 8000 at ::1
+ASP.NET Core Watch Port: 8001
+stdout: dotnet watch 🔥 Hot reload enabled. For a list of supported edits, see https://aka.ms/dotnet/hot-reload.
+  💡 Press "Ctrl + R" to restart.
+
+stdout: dotnet watch 🔧 Building...
+
+stdout:   Determining projects to restore...
+
+stdout:   All projects are up-to-date for restore.
+
+
+

@@ -1,0 +1,25 @@
+﻿@{
+    var viewPath = ViewContext.View.Path;
+
+    if (viewPath.Contains("Company"))
+    {
+        Layout = "~/Views/Shared/_Blank.cshtml";
+    }
+    else if (viewPath.Contains("Home"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else if (viewPath.Contains("Reports"))
+    {
+        Layout = "~/Views/Shared/_ReportsLayout.cshtml";
+    }
+    else if (viewPath.Contains("Admin"))
+    {
+        Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Blank.cshtml";
+    }
+}
+

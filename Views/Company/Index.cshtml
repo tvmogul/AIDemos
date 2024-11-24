@@ -1,0 +1,826 @@
+﻿@* @using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity *@
+@model List<string>
+
+@{
+    // Html.RenderPartial("_jwt_token_check");
+    ViewData["Title"] = "Company Gate";
+    var scriptNonce = Html.ScriptNonce();
+    //var styleNonce = Html.StyleNonce();
+}
+
+<style>
+    /* Optional: Add padding for better spacing */
+    table.dataTable thead th {
+        padding: 10px;
+    }
+
+    /* BEGIN FIXED HEADER GRID SETTINGS */
+    .dt-scroll-body::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+        background-color: #F5F5F5;
+        border-radius: 10px;
+    }
+
+    .dt-scroll-body::-webkit-scrollbar {
+        width: 6px;
+        background-color: #F5F5F5;
+    }
+
+    .dt-scroll-body::-webkit-scrollbar-thumb {
+        background-color: #777;
+        border-radius: 10px;
+    }
+    /* END FIXED HEADER GRID SETTINGS */
+
+    table.dataTable thead th {
+        padding: 10px;
+    }
+
+    table.dataTable thead tr {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7));
+        color: white;
+        text-align: center;
+        padding: 10px;
+        border: none;
+    }
+
+</style>
+
+<style>
+    /* General styling */
+    body {
+        font-size: 9pt;
+        font-family: Arial, sans-serif;
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none; /* Non-prefixed version for modern browsers */
+    }
+
+    form {
+        width: 100%;
+    }
+
+    /* Table styling */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    th, td {
+        text-align: left;
+        padding: 2px;
+        border: 0px none !important;
+    }
+
+    th {
+        font-weight: bold;
+    }
+
+    td {
+        width: 50% !important;
+        padding-right: 6px !important;
+    }
+
+    /* Form-related styles */
+    .form-container {
+        font-size: 9pt;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .form-row {
+        margin-bottom: 0 !important;
+    }
+
+    .form-label {
+        font-size: 9pt;
+        margin-bottom: 0 !important;
+    }
+
+    .form-input {
+        padding: 1px;
+        font-size: 10px;
+        box-sizing: border-box;
+    }
+
+    .no-padding {
+        margin: 0px !important;
+        padding: 0px !important;
+    }
+
+    .submit-btn {
+        font-size: 10px;
+        padding: 2px 4px;
+    }
+
+    input, textarea, select {
+        font-size: 9pt;
+        padding: 1px;
+        box-sizing: border-box;
+    }
+
+        input[type="number"], input[type="date"], input[type="url"] {
+            font-size: 9pt;
+        }
+
+    /* Company-specific styles */
+    #company {
+        border: transparent !important;
+        border-image-width: 0px !important;
+    }
+
+        #company tr > td {
+            padding-right: 6px !important;
+        }
+
+    /* Responsive table for small screens */
+    @@media screen and (max-width: 768px) {
+        table, thead, tbody, th, td, tr {
+            display: block;
+        }
+
+        table, tr, td {
+            width: 100%;
+        }
+
+        td {
+            display: flex;
+            justify-content: space-between;
+            padding-left: 50%;
+            position: relative;
+            margin-bottom: 1px;
+        }
+
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0;
+                width: 45%;
+                padding-left: 10px;
+                font-weight: bold;
+            }
+
+        tr {
+            margin-bottom: 10px;
+        }
+
+        input {
+            width: 100%;
+        }
+    }
+
+    .grad_white {
+        /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#ffffff+0,f6f6f6+47,ededed+100;White+3D+%231 */
+        background: linear-gradient(to bottom, #ffffff 0%,#f6f6f6 47%,#ededed 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+        padding: 0px 0px 2px 0px !important;
+    }
+
+    .grad_blue {
+        /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#f2f5f6+0,e3eaed+37,c8d7dc+100;Grey+3D+%234 */
+        background: linear-gradient(to bottom, #f2f5f6 0%,#e3eaed 37%,#c8d7dc 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+        padding: 0px 0px 2px 0px !important;
+    }
+
+    #companies tbody tr {
+        cursor: pointer;
+    }
+
+    .btn_sm {
+        font-size: 1.2em !important;
+        /* font-weight: bold !important; */
+        padding: 5px 8px 5px 8px !important;
+    }
+
+    .companies_wrapper {
+        text-align: left !important;
+    }
+
+</style>
+
+<style>
+    #businessType {
+        width: auto; /* Set width automatically based on content */
+        max-width: 150px; /* You can adjust this value to control the width after selection */
+        transition: width 0.3s ease-in-out;
+    }
+
+    #businessType:focus {
+        width: 400px; /* Adjust the width for the dropdown mode */
+    }
+</style>
+
+<div id="loadingSpinner" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: rgba(255, 255, 255, 0.8); z-index: 1000;">
+    <img src="/img/spinner.gif" alt="Loading..." />
+</div>
+<br />
+<br />
+<div>
+    <div style="position: relative; max-width: 800px; margin: 0 auto;">
+        <canvas id="netcanvas" width="800" height="70" style="display: block; width: 100%; height: 70px; border: none transparent;"></canvas>
+        <table id="overlayTable" style="margin-left: 62px !important;width: 100%; position: absolute; top: 0; left: 0; z-index: 10; background: transparent;">
+            <tr>
+                <td style="text-align: right;">
+                    <img src="~/img/logo_aidemos.png" alt="" style="height: 50px; width: auto; opacity: 0.5;" />
+                </td>
+                <td style="text-align: left;">
+                    <h2 style="margin-top: 12px;">Companies</h2>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding-right: 62px !important;text-align: center !important;">
+                    <strong>The Future of Bookkeeping™</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+<br />
+
+<table id="myTable" class="grad_blue" style="max-width: 260px !important;background-color: white;">
+    <tr class="grad_blue">
+        <td colspan="2">
+        </td>
+    </tr>
+    <tr class="grad_blue">
+        <td style="max-width: 260px !important;padding: 4px 0px 1px 12px !important;font-size: 1.2em;font-weight: bold; color: #2a9df4;">
+            Select Company Below
+        </td>
+        <td>
+            <input id="loadCompany" class="button white btn_sm" type="button" value="Load Company" />
+            <input id="createCompany" class="button white btn_sm" type="button" value="Create Company" />
+            <input id="editCompany" class="button white btn_sm" type="button" value="Edit" />
+            <input id="cancelCompany" class="button white btn_sm" type="button" value="Cancel" />
+            @* <input id="findComapny" class="button white btn_sm" type="button" value="Find Company" /> *@
+        </td>
+    </tr>
+    <tr>
+        <td style="padding-top: 6px !important;text-align: left !important;vertical-align: top !important;width: 30% !important;">
+            <div style="width: 260px;text-align: left !important;">
+                <table id="companies" class="display" style="text-align: left !important;width: 100% !important;max-width: 260px !important;table-layout: fixed;">
+                    <thead>
+                    </thead>
+                </table>
+            </div>
+        </td>
+        <td style="text-align: center !important;vertical-align: top !important;width: 70% !important;">
+            <div class="container" style="padding: 0; margin: 0;">
+                <form>
+                    <table>
+                        <tr>
+                            <td>
+                                <label for="companyName">Company Name</label><br>
+                                <input type="text" id="companyName" name="companyName">
+                            </td>
+                            <td>
+                                <label for="phone">Phone</label><br>
+                                <input type="tel" id="phone" name="phone">
+                            </td>
+                            <td>
+                                <label for="companyStatus">Company Status</label><br>
+                                <select id="companyStatus" name="companyStatus">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="address">Address</label><br>
+                                <input type="text" id="address" name="address">
+                            </td>
+                            <td>
+                                <label for="fax">Fax</label><br>
+                                <input type="text" id="fax" name="fax">
+                            </td>
+                            <td>
+                                <label for="logo">Logo (URL)</label><br>
+                                <input type="url" id="logo" name="logo">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="city">City</label><br>
+                                <input type="text" id="city" name="city">
+                            </td>
+                            <td>
+                                <label for="email">Email</label><br>
+                                <input type="email" id="email" name="email">
+                            </td>
+                            <td>
+                                <label for="dateOfIncorporation">Date of Incorporation</label><br>
+                                <input type="date" id="dateOfIncorporation" name="dateOfIncorporation">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="state">State</label><br>
+                                <input type="text" id="state" name="state">
+                            </td>
+                            <td>
+                                <label for="website">Website</label><br>
+                                <input type="url" id="website" name="website">
+                            </td>
+                            <td>
+                                <label for="taxIDNumber">Tax ID Number</label><br>
+                                <input type="text" id="taxIDNumber" name="taxIDNumber">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="zipCode">Zip Code</label><br>
+                                <input type="text" id="zipCode" name="zipCode">
+                            </td>
+                            <td>
+                                <label for="businessType">Business Type</label><br>
+                                <select id="businessType" name="businessType">
+                                    <option value="S Corp">S Corp (Subchapter S Corporation)</option>
+                                    <option value="C Corp">C Corp (C Corporation)</option>
+                                    <option value="Individual">Individual/Sole Proprietorship</option>
+                                    <option value="DBA">DBA (Doing Business As)</option>
+                                    <option value="LLC">LLC (Limited Liability Company)</option>
+                                    <option value="Partnership">Partnership (General Partnership or Limited Partnership)</option>
+                                    <option value="Non-Profit">Non-Profit Organization (501(c)(3), etc.)</option>
+                                    <option value="Trust">Trust</option>
+                                    <option value="Estate">Estate</option>
+                                    <option value="LLP">LLP (Limited Liability Partnership)</option>
+                                    <option value="PC">PC (Professional Corporation)</option>
+                                    <option value="Government">Government Entity</option>
+                                    <option value="Cooperative">Cooperative (Co-op)</option>
+                                    <option value="Joint Venture">Joint Venture</option>
+                                    <option value="Foreign Corp">Foreign Corporation</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </td>
+                            <td>
+                                <label for="contactPerson">Contact Person</label><br>
+                                <input type="text" id="contactPerson" name="contactPerson">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="country">Country</label><br>
+                                <input type="text" id="country" name="country">
+                            </td>
+                            <td>
+                                <label for="industry">Industry</label><br>
+                                <input type="text" id="industry" name="industry">
+                            </td>
+                            <td>
+                                <label for="notes">Notes</label><br>
+                                <textarea id="notes" name="notes" rows="1"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="text" id="companyID" name="companyID" readonly style="width: 100% !important;font-size: .8em !important;color: black; border: none; background-color: transparent;" />
+                            </td>
+                            <td>
+                                <input type="text" id="databaseName" name="databaseName" readonly style="width: 100% !important;font-size: .8em !important;color: black; border: none; background-color: transparent;" />
+                            </td>
+                            <td>
+                                <input type="text" id="dbDateCreated" name="dbDateCreated" readonly style="width: 100% !important;font-size: .8em !important;color: black; border: none; background-color: transparent;" />
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<br />
+<br />
+<br />
+<br />
+@section Scripts {
+    <script src="/js/neural_noise.js" nonce="@scriptNonce"></script>
+    <script nonce="@scriptNonce">
+        var bEnable = false;
+        var bNewCompany = false;
+
+        $(document).ready(function () {
+
+            bNewCompany = false;
+            bEnable = false;
+            EnableDisable();
+
+            fetchDataAndInitializeTable();
+
+        });
+
+        function showSpinner() {
+            $('#loadingSpinner').show();
+        }
+
+        function hideSpinner() {
+            $('#loadingSpinner').hide();
+        }
+
+        function fetchDataAndInitializeTable() {
+            showSpinner();
+
+            $.ajax({
+                url: '/Company/GetCompanies',
+                method: 'GET',
+                success: function (response) {
+                    //alert(response.DatabaseName);
+                    //alert(JSON.stringify(response));
+                    // response.forEach(function (company) {
+                    //     alert('Fetched company: ' + company.DatabaseName);  // Try to access the CompanyName
+                    // });
+
+                    //console.log('Response received:', response);  // This should be an array of companies
+                    initializeDataTable(response);  // Directly pass the response
+                },
+                error: function (xhr, status, error) {
+                    //alert("Error fetching data: " + error);
+                    console.error("Status: ", status);
+                    console.error("Response: ", xhr.responseText);
+                }
+            });
+        }
+
+        function initializeDataTable(data) {
+            var table = $('#companies').DataTable({
+                data: data,
+                dom: 'frtip',
+                // buttons: ['print', 'pdf'],
+                //className: 'text-left'
+                columns: [
+                    { data: 'databaseName', title: 'Company', width: "120px" }
+                ],
+                info: false,  // Disable the "Showing X to Y of Z entries" text
+                scrollY: '180px',  // Adjust the height of the table
+                scrollCollapse: true,  // Collapse the table if less than 120px worth of data
+                paging: true,  // Enable pagination
+                pageLength: 50,  // Show 50 rows per page
+                searching: false,  // Disable the search box
+                lengthChange: false,  // Disable the ability to change the number of visible rows
+                autoWidth: false,  // Disable automatic resizing of columns
+                responsive: true,  // Enable responsive table behavior
+                headerCallback: function (thead, data, start, end, display) {
+                    $(thead).remove();  // Remove the table header
+                },
+                initComplete: function () {
+                    hideSpinner();
+                }
+            });
+
+            // Handle row selection
+            $('#companies tbody').on('click', 'tr', function () {
+                $('#companies tbody tr').removeClass('selected');
+                $(this).addClass('selected');
+                // Apply background color to selected row via CSS
+                $('#companies tbody tr').css('background-color', '');
+                $(this).css('background-color', 'lightblue');
+
+                var table = $('#companies').DataTable();  // Get the DataTable instance
+                var data = table.row(this).data();  // Get the data for the clicked row
+
+                $.ajax({
+                    url: '/Company/LoadCompanyData',
+                    method: 'GET',
+                    data: { dbFileName: data.databaseName },
+                    success: function (response) {
+                        // Use prompt so you can copy/paste data returned
+                        //prompt("copy", JSON.stringify(response));
+                        loadCompanyData(response)
+                    },
+                    error: function (xhr, status, error) {
+                        // console.error("Status: ", status);
+                        // console.error("Response: ", xhr.responseText);
+                        // Use prompt so you can copy/paste data returned
+                        prompt("Copy", "Error fetching data: " + error + "\r\nStatus: " + status + "\r\nResponse: " + xhr.responseText);
+                    }
+                });
+
+            });
+
+        }
+
+        function loadCompanyData(response) {
+
+            // Use prompt so you can copy/paste data returned
+            //prompt("copy", JSON.stringify(response));
+
+            // Check if the response contains 'companyData'
+            if (!response || !response.companyData || response.companyData.length === 0) {
+                alert('No company data returned.');
+                return;
+            }
+
+            // Add alert to check the first and ONLY company record per database!
+            //alert('Company data found, attempting to access first record.');
+
+            // Since it's an array, we retrieve the first company record
+            var company = response.companyData[0];
+
+            if (!company) {
+                alert('Company data is undefined.');
+                return;
+            }
+
+            // Debugging: check the company name
+            //alert('Company ID: ' + company.companyID);
+
+            // Function to format the date in YYYY-MM-DD format
+            function formatDate(dateString) {
+                var date = new Date(dateString);
+                var day = ('0' + date.getDate()).slice(-2);
+                var month = ('0' + (date.getMonth() + 1)).slice(-2);
+                var year = date.getFullYear();
+                return year + '-' + month + '-' + day;
+            }
+
+            // Now populate the fields with company data
+            // Assuming companyID is base64 encoded, decode it
+            //$('#companyID').val(company.companyID ? atob(company.companyID) : '');
+
+            $('#companyID').val(company.companyID);
+            $('#companyName').val(company.companyName || '');
+            $('#address').val(company.address || '');
+            $('#city').val(company.city || '');
+            $('#state').val(company.state || '');
+            $('#zipCode').val(company.zipCode || '');
+            $('#country').val(company.country || '');
+            $('#phone').val(company.phone || '');
+            $('#fax').val(company.fax || '');
+            $('#email').val(company.email || '');
+            $('#taxIDNumber').val(company.taxIDNumber || '');
+            $('#dateOfIncorporation').val(formatDate(company.dateOfIncorporation)); // Format date
+            $('#businessType').val(company.businessType || '');
+            $('#website').val(company.website || '');
+            $('#industry').val(company.industry || '');
+            $('#contactPerson').val(company.contact || '');
+            $('#logo').val(company.logo || '');
+            $('#companyStatus').val(company.active ? "Active" : "Inactive");
+            $('#notes').val(company.notes || '');
+            $('#databaseName').val(company.databaseName || '');
+
+            var _dbDateCreated = GetDBDateCreated(company.databaseName);
+            if (company.databaseName == 'demo_company.db') {
+                $('#dbDateCreated').val('Christmas: ' + _dbDateCreated);
+            } else {
+                $('#dbDateCreated').val('Created: ' + _dbDateCreated);
+            }
+
+            bNewCompany = false;
+            bEnable = false;
+            EnableDisable();
+
+            if (bEnable) {
+                document.getElementById("editCompany").value = "Save";
+            } else {
+                document.getElementById("editCompany").value = "Edit";
+            }
+        }
+
+        function GetDBDateCreated(databaseName) {
+            // Check if the database name is "demo_company.db"
+            if (databaseName === "demo_company.db") {
+                // Return the date for Christmas evening at midnight in 1869
+                let christmasEve1869 = new Date(Date.UTC(1869, 11, 24, 0, 0, 0)); // JavaScript months are zero-indexed (11 for December)
+                return christmasEve1869.toISOString().slice(0, 19).replace('T', ' ');
+            }
+
+            // Split the database name to extract the timestamp part (assuming format {sanitizedCompanyName}_{id}.db)
+            let parts = databaseName.split(/[_\.]/);
+            if (parts.length >= 2 && !isNaN(parts[1])) {
+                let unixTimestamp = parseInt(parts[1], 10);
+
+                // Convert Unix timestamp to Date
+                let dateTime = new Date(unixTimestamp * 1000); // JavaScript uses milliseconds, hence multiplying by 1000
+
+                // Return a human-readable format
+                return dateTime.toISOString().slice(0, 19).replace('T', ' ');
+            } else {
+                // Return the date for Christmas evening at midnight in 1869
+                let christmasEve1869 = new Date(Date.UTC(1869, 11, 24, 0, 0, 0));
+                return christmasEve1869.toISOString().slice(0, 19).replace('T', ' ');
+            }
+        }
+
+
+        document.getElementById("createCompany").addEventListener("click", function () {
+            // Function to format the date
+            // (not needed here since fields will be empty)
+            function formatDate(dateString) {
+                var date = new Date(dateString);
+                var day = ('0' + date.getDate()).slice(-2);
+                var month = ('0' + (date.getMonth() + 1)).slice(-2);
+                var year = date.getFullYear();
+                return year + '-' + month + '-' + day;
+            }
+
+            // Set all input fields to an empty string
+            $('#companyID').val('');
+            $('#companyName').val('');
+            $('#address').val('');
+            $('#city').val('');
+            $('#state').val('');
+            $('#zipCode').val('');
+            $('#country').val('');
+            $('#phone').val('');
+            $('#fax').val('');
+            $('#email').val('');
+            $('#taxIDNumber').val('');
+            $('#dateOfIncorporation').val(''); // No need for date formatting, just set it empty
+            $('#businessType').val('');
+            $('#website').val('');
+            $('#industry').val('');
+            $('#contactPerson').val('');
+            // $('#billingAddress').val('');
+            // $('#shippingAddress').val('');
+            $('#logo').val('');
+            // $('#paymentTerms').val('');
+            // $('#creditLimit').val('');
+            // $('#accountManager').val('');
+            // $('#companySize').val('');
+            //$('#companyStatus').val('');
+            $('#notes').val('');
+
+            bNewCompany = true;
+            bEnable = true;
+            EnableDisable();
+
+            if (bEnable) {
+                document.getElementById("editCompany").value = "Save";
+            } else {
+                document.getElementById("editCompany").value = "Edit";
+            }
+        });
+
+        document.getElementById("loadCompany").addEventListener("click", function () {
+            var _companyName = document.getElementById("companyName").value;
+            var _databaseName = document.getElementById("databaseName").value;
+
+            if (_companyName.length < 1 || _databaseName.length < 1) {
+                alert("You MUST select a Company and a Database!");
+                return;
+            }
+
+            // Navigate to /land/Index with companyName and databaseName as query parameters
+            window.location.href = "/Home/Index?companyName=" + encodeURIComponent(_companyName) + "&databaseName=" + encodeURIComponent(_databaseName);
+        });
+
+        document.getElementById("cancelCompany").addEventListener("click", function () {
+            //alert("Cancelled!");
+            bNewCompany = false;
+            bEnable = false;
+            EnableDisable();
+        });
+
+        // document.getElementById("findComapny").addEventListener("click", function () {
+        //     alert("Find Company button clicked");
+        // });
+
+        document.getElementById("editCompany").addEventListener("click", function () {
+            if (document.getElementById("editCompany").value == "Save") {
+                document.getElementById("editCompany").value = "Edit";
+                bNewCompany = false;
+                bEnable = false;
+                EnableDisable();
+                SaveCompany();
+            } else {
+                document.getElementById("editCompany").value = "Save";
+                bNewCompany = false;
+                bEnable = true;
+                EnableDisable();
+            }
+        });
+
+        function SaveCompany() {
+            var _companyID = $('#companyID').val();
+            //alert(_companyID);
+
+            var _method = "UpdateCompany";
+            if (_companyID.length < 1) {
+                _companyID = "";
+                _method = "CreateNewCompany";
+            }
+
+            if ($('#companyStatus').val() == "Active") {
+                _active = true;
+            } else {
+                _active = false;
+            }
+
+            var companyData = {
+                companyID: _companyID,
+                companyName: $('#companyName').val(),
+                address: $('#address').val(),
+                city: $('#city').val(),
+                state: $('#state').val(),
+                zipCode: $('#zipCode').val(),
+                country: $('#country').val(),
+                phone: $('#phone').val(),
+                fax: $('#fax').val(),
+                email: $('#email').val(),
+                taxIDNumber: $('#taxIDNumber').val(),
+                dateOfIncorporation: $('#dateOfIncorporation').val(),
+                businessType: $('#businessType').val(),
+                website: $('#website').val(),
+                industry: $('#industry').val(),
+                contactPerson: $('#contactPerson').val(),
+                // billingAddress: $('#billingAddress').val(),
+                // shippingAddress: $('#shippingAddress').val(),
+                logo: $('#logo').val(),
+                // paymentTerms: $('#paymentTerms').val(),
+                // creditLimit: $('#creditLimit').val(),
+                // accountManager: $('#accountManager').val(),
+                // companySize: $('#companySize').val(),
+                //companyStatus: _active,
+                active: _active,
+                notes: $('#notes').val(),
+                databaseName: $('#databaseName').val(),
+            };
+
+            $.ajax({
+                url: `/Company/${_method}`,
+                type: 'POST',
+                data: JSON.stringify(companyData),
+                contentType: 'application/json',
+                success: function (response) {
+                    // alert("New company saved successfully!");
+                    // location.reload();
+                },
+                error: function (xhr, status, error) {
+                    // console.error("Status: ", status);
+                    // console.error("Response: ", xhr.responseText);
+                    // Use prompt so you can copy/paste data returned
+                    prompt("Copy", "Error fetching data: " + error + "\r\nStatus: " + status + "\r\nResponse: " + xhr.responseText);
+                }
+            });
+
+            bNewCompany = false;
+            bEnable = false;
+            EnableDisable();
+        }
+
+        function ClearFormFields() {
+            // Clear all input fields
+            $('#companyID').val('');
+            $('#companyName').val('');
+            $('#address').val('');
+            $('#city').val('');
+            $('#state').val('');
+            $('#zipCode').val('');
+            $('#country').val('');
+            $('#phone').val('');
+            $('#fax').val('');
+            $('#email').val('');
+            $('#taxIDNumber').val('');
+            $('#dateOfIncorporation').val('');
+            $('#businessType').val('');
+            $('#website').val('');
+            $('#industry').val('');
+            $('#contactPerson').val('');
+            // $('#billingAddress').val('');
+            // $('#shippingAddress').val('');
+            $('#logo').val('');
+            // $('#paymentTerms').val('');
+            // $('#creditLimit').val('');
+            // $('#accountManager').val('');
+            // $('#companySize').val('');
+            // $('#companyStatus').val('');
+            $('#notes').val('');
+        }
+
+        function EnableDisable() {
+            document.getElementById("companyName").disabled = !bNewCompany;
+            document.getElementById("address").disabled = !bEnable;
+            document.getElementById("city").disabled = !bEnable;
+            document.getElementById("state").disabled = !bEnable;
+            document.getElementById("zipCode").disabled = !bEnable;
+            document.getElementById("country").disabled = !bEnable;
+            document.getElementById("phone").disabled = !bEnable;
+            document.getElementById("fax").disabled = !bEnable;
+            document.getElementById("email").disabled = !bEnable;
+            document.getElementById("taxIDNumber").disabled = !bEnable;
+            document.getElementById("dateOfIncorporation").disabled = !bEnable;
+            document.getElementById("businessType").disabled = !bEnable;
+            document.getElementById("website").disabled = !bEnable;
+            document.getElementById("industry").disabled = !bEnable;
+            document.getElementById("contactPerson").disabled = !bEnable;
+            //document.getElementById("billingAddress").disabled = !bEnable;
+            //document.getElementById("shippingAddress").disabled = !bEnable;
+            document.getElementById("logo").disabled = !bEnable;
+            // document.getElementById("paymentTerms").disabled = !bEnable;
+            // document.getElementById("creditLimit").disabled = !bEnable;
+            // document.getElementById("accountManager").disabled = !bEnable;
+            // document.getElementById("companySize").disabled = !bEnable;
+            document.getElementById("companyStatus").disabled = !bEnable;
+            document.getElementById("notes").disabled = !bEnable;
+        }
+
+    </script>
+
+}
+
+
+

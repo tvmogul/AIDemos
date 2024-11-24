@@ -1,0 +1,25 @@
+﻿<a id="zebra" href="#" class="clickable-area">
+    <img src="/ads/ad_brain_sos.png" alt="Ad" data-id="https://maxlifespan.com/" style="width: 420px; height: 60px;">
+</a>
+
+<script>
+    const zebra = document.getElementById('zebra');
+    const img = zebra.querySelector('img');
+
+    // Define the two images with their respective data-id attributes
+    const ads = [
+        { src: "/ads/728x90.png", dataId: "https://software-rus.com/" },
+        { src: "/ads/ad_brain_sos.png", dataId: "https://maxlifespan.com/" }
+    ];
+
+    // Set an interval to rotate ads
+    let currentAdIndex = 0;
+    setInterval(() => {
+        // Toggle the ad index
+        currentAdIndex = (currentAdIndex + 1) % ads.length;
+
+        // Update the image src and data-id
+        img.src = ads[currentAdIndex].src;
+        img.setAttribute('data-id', ads[currentAdIndex].dataId);
+    }, 5000); // Change every 5 seconds
+</script>

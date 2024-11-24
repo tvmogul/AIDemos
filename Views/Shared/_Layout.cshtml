@@ -1,0 +1,545 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using Newtonsoft.Json
+@*@inject IJSRuntime JSRuntime*@
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using System.Collections.Generic
+
+@{
+    var scriptNonce = Html.ScriptNonce();
+    //var styleNonce = Html.StyleNonce();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/site.css" asp-append-version="true" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="/lib/datatables/dataTables.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/autoFill.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/buttons.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/colReorder.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/dataTables.dateTime.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/fixedHeader.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/keyTable.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/responsive.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/rowGroup.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/rowReorder.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/scroller.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/searchBuilder.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/searchPanes.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/select.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/stateRestore.bootstrap5.min.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="/css/hover.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/css/buttons.css" asp-append-version="true" />
+
+    @* <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" /> *@
+    @* <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" crossorigin="anonymous" /> *@
+    @* <link rel="stylesheet" href="/lib/prism/themes/prism.css" /> *@
+    @* <link rel="stylesheet" href="/css/site" asp-append-version="true" /> *@
+   
+    <style>
+        .hidden {
+            display: none !important;
+        }
+
+        .center-wrapper {
+            text-align: center;
+        }
+
+        .navbar {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        #header {
+            position: fixed !important;
+            top: 0 !important;
+            position: fixed !important;
+            height: 20px !important;
+            width: 100% !important;
+            z-index: 999999999 !important;
+            box-shadow: 4px 9px 18px -2px rgba(0, 0, 0, 1);
+            -webkit-box-shadow: 4px 9px 18px -2px rgba(0, 0, 0, 1);
+        }
+
+        .shadow {
+            box-shadow: 4px 9px 18px -2px rgba(0, 0, 0, 1);
+            -webkit-box-shadow: 4px 9px 18px -2px rgba(0, 0, 0, 1);
+        }
+
+        footer {
+            background-color: white !important;
+            position: fixed !important;
+            height: 40px !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            padding-bottom: 4px !important;
+            z-index: 999999999 !important;
+        }
+
+        /* ====================================================
+            Scrollbar Gray class="flexcroll-gray flex flex-col h-screen"
+            ======================================================*/
+        .flexcroll-gray {
+            scrollbar-face-color: #367CD2;
+            scrollbar-shadow-color: #FFFFFF;
+            scrollbar-highlight-color: #FFFFFF;
+            scrollbar-3dlight-color: #FFFFFF;
+            scrollbar-darkshadow-color: #FFFFFF;
+            scrollbar-track-color: #FFFFFF;
+            scrollbar-arrow-color: #FFFFFF;
+        }
+
+        .flexcroll-gray::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .flexcroll-gray::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        .flexcroll-gray::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgb(206,220,231);
+            background: -moz-linear-gradient(top, rgba(206,220,231,1) 0%, rgba(89,106,114,1) 65%);
+            background: -webkit-linear-gradient(top, rgba(206,220,231,1) 0%,rgba(89,106,114,1) 65%);
+            background: linear-gradient(to bottom, rgba(206,220,231,1) 0%,rgba(89,106,114,1) 65%);
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cedce7', endColorstr='#596a72',GradientType=0 );
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        /* ====================================================
+            Scrollbar White class="flexcroll-white flex flex-col h-screen"
+            ======================================================*/
+        .flexcroll-white {
+            scrollbar-face-color: #FFFFFF;
+            scrollbar-shadow-color: #FFFFFF;
+            scrollbar-highlight-color: #FFFFFF;
+            scrollbar-3dlight-color: #FFFFFF;
+            scrollbar-darkshadow-color: #FFFFFF;
+            scrollbar-track-color: #FFFFFF;
+            scrollbar-arrow-color: #FFFFFF;
+        }
+
+       .flexcroll-white::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .flexcroll-white::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        .flexcroll-white::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgb(255,255,255);
+            background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(220,220,220,1) 65%);
+            background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(220,220,220,1) 65%);
+            background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(220,220,220,1) 65%);
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#dcdcdc',GradientType=0 );
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
+        }
+
+        .cool-gray {
+            background-color: #7c8894;
+            color: white !important;
+        }
+
+        .cool-lightgray {
+            background-color: #ebedf1;
+            color: black !important;
+        }
+
+        .cool-green {
+            background-color: #80b1a0;
+            color: white !important;
+        }
+
+        .zpad {
+            padding-top: 70px !important;
+        }
+
+        .grad_blue {
+            /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#f2f5f6+0,e3eaed+37,c8d7dc+100;Grey+3D+%234 */
+            background: linear-gradient(to bottom, #f2f5f6 0%,#e3eaed 37%,#c8d7dc 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+            padding: 0px 0px 2px 0px !important;
+        }
+
+    /* Ensure the cursor is a hand (pointer) when hovering over these clickable areas */
+    .clickable-area {
+        display: block; /* This makes the anchor behave like a block, filling the td */
+        width: 100%;
+        height: 100%;
+        text-decoration: none; /* Remove underline */
+    }
+
+    .clickable-area:hover {
+        cursor: pointer;
+    }
+
+    .ad_free {
+        font-weight: bold !important;
+        font-size: .9em !important;
+        margin: 0px 0px 0px 0px !important;
+        padding: 0px 0px -2px 0px !important;
+    }
+
+        /* Custom alignment for right-aligned ad item */
+        .navbar-nav {
+            display: flex;
+        }
+
+        .ad-item {
+            margin-left: auto;
+        }
+
+    </style>
+
+</head>
+<body class="flexcroll-white flex flex-col h-screen">
+    <header>
+        <nav class="navbar fixed-top navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3 shadow mygrad">
+            <div class="container-fluid">
+                <a href="@Url.Action("Index", "Home")" class="navbar-brand" style="margin-top: 0px !important;">
+                    <img loading="lazy" class="hvr-pulse-grow" src="/img/logo_aidemos.png" style="width:auto;height:40px;" title="Max Lifespan" alt="" />
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 align-items-center" style="font-weight: bold !important; line-height: 1em !important;">
+                        <li class="nav-item" style="text-align: center !important; padding-top: 12px !important;">
+                            <a class="nav-link text-dark hvr-grow" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            &nbsp;&nbsp;&nbsp;
+                        </li>
+                        <li class="nav-item dropdown" style="text-align: center !important; padding-top: 12px !important;">
+                            <a style="background-color: transparent !important;"
+                               class="nav-link dropdown-toggle text-dark hvr-grow" href="#" role="button"
+                               data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Manage
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Company" asp-action="Index">Company</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Accounts</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Transactions</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Categories</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Vendors</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Employees</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Invoices</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown" style="text-align: center !important; padding-top: 12px !important;">
+                            <a style="background-color: transparent !important;"
+                               class="nav-link dropdown-toggle text-dark hvr-grow" href="#" role="button"
+                               data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Banking
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Bank Accounts</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Bank Transactions</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Transfers</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Deposits</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Payments</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Bank Feeds</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item" style="text-align: center !important; padding-top: 12px !important;">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Reports">Reports</a>
+                        </li>
+                        @* <li class="nav-item" style="text-align: center !important;">
+                        <a class="nav-link text-dark hvr-grow" asp-area="" asp-controller="Neuro" asp-action="Index">Business<br />Reports</a>
+                        &nbsp;&nbsp;&nbsp;
+                        </li> *@
+
+                        <li class="nav-item dropdown" style="text-align: center !important; padding-top: 12px !important;">
+                            <a style="background-color: transparent !important;"
+                               class="nav-link dropdown-toggle text-dark hvr-grow" href="#" role="button"
+                               data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Tools
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Settings</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Data Backup</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Import/Export</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Calculators</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Utilities</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Preferences</a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown" style="text-align: center !important; padding-top: 12px !important;">
+                            <a style="background-color: transparent !important;"
+                               class="nav-link dropdown-toggle text-dark hvr-grow" href="#" role="button"
+                               data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Sites
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">AI Net Profit</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Site 2</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Site 3</a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown" style="text-align: center !important; padding-top: 12px !important;">
+                            <a style="background-color: transparent !important;"
+                               class="nav-link dropdown-toggle text-dark hvr-grow" href="#" role="button"
+                               data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Help
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="nav-item">
+                                    <a class="dropdown-item text-dark hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Totorial and Concepts Guide</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item text-dark hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Videos and Movies</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item text-dark hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Contents</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item text-dark hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">Search</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item text-dark hvr-grow" asp-area="" asp-controller="Rubik" asp-action="Index">Rubik</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="dropdown-item text-dark hvr-grow" asp-area="" asp-controller="Gate" asp-action="Index">About...</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item" style="text-align: center !important; padding-top: 12px !important;">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+
+                        <!-- Right-aligned Ad item -->
+                        <li class="nav-item ad-item" style="text-align: center !important;">
+                            <a id="zebra" href="#" class="clickable-area">
+                                <img src="/ads/ad_brain_sos.png" alt="Ad" data-id="" style="width: 420px; height: 60px;">
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3 zpad">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Ad placeholder for a 728x90 leaderboard ad -->
+    @* <footer class="border-top footer fixed-bottom text-muted grad_blue" style="min-height: 68px !important;padding: 2px 0px 2px 0px !important;">
+        <table style="width: 100% !important;">
+            <tr>
+                <td style="width: 25%;"></td>
+                <td style="width: 420px !important; height: 60px !important; text-align: center !important;">
+                    <a id="zebra" href="#" class="clickable-area">
+                        <img src="/ads/ad_brain_sos.png" alt="Ad" style="width: 420px; height: 60px;">
+                    </a>
+                </td>
+                <td style="width: 25%;padding-right: 12px !important;text-align: center !important;">
+                    <a href="https://ainetprofit.com" target="_blank" class="clickable-area">
+                        <div class="ad_free">Pro Version is Ad Free</div>
+                        <div class="ad_free">Click Here</div>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </footer> *@
+
+    <footer class="border-top footer fixed-bottom text-muted">
+        <div style="padding: 6px 0px 0px 22px !important;">
+            <p class="not-printable footer_div_p">&copy; @DateTime.Now.Year - Ouslan, Inc.</p>
+        </div>
+    </footer>
+
+    <script src="/lib/jquery/dist/jquery.min.js" nonce="@scriptNonce"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js" nonce="@scriptNonce"></script>
+
+    @* DO NOT INCLUDE THESE BECAUSE THEY CAUSE MANY ISSUES!!! *@
+    @* <link rel="stylesheet" href="/lib/datatables/fixedColumns.bootstrap5.min.css" nonce="@scriptNonce" asp-append-version="true" /> *@
+    @* <script src="/lib/datatables/fixedColumns.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script> *@
+
+    <!-- Required for Excel and PDF export -->
+    <script src="/lib/datatables/jszip.min.js" nonce="@scriptNonce"></script>
+    <script src="/lib/datatables/pdfmake.min.js" nonce="@scriptNonce"></script>
+    <script src="/lib/datatables/vfs_fonts.js" nonce="@scriptNonce"></script>
+    <script src="/lib/datatables/dataTables.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.buttons.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.colVis.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.html5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.print.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+
+    <script src="/lib/datatables/dataTables.autoFill.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/autoFill.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.colReorder.min.js"nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/colReorder.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.fixedColumns.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.dateTime.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    @* <script src="/lib/datatables/fixedColumns.bootstrap5.min.js"nonce="@scriptNonce" asp-append-version="true"></script> *@
+    <script src="/lib/datatables/dataTables.fixedHeader.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/fixedHeader.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.keyTable.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/keyTable.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.responsive.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/responsive.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.rowGroup.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/rowGroup.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.rowReorder.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/rowReorder.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.scroller.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/scroller.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.searchBuilder.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/searchBuilder.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.searchPanes.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/searchPanes.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.select.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/select.bootstrap5.min.js"nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.stateRestore.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/stateRestore.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+
+    <script src="/lib/fabric.js/fabric.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/tagcanvas/tagcanvas.js" nonce="@scriptNonce" asp-append-version="true"></script>
+
+    <script nonce="@scriptNonce">
+
+        $(document).ready(function () {
+            //alert("$(document).ready Loads Last!");
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            //alert("DOMContentLoaded Loads First!");
+            const zebraElement = document.getElementById("zebra");
+            if (zebraElement) {
+                zebraElement.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    if (window.electron && window.electron.ipcRenderer) {
+                        window.electron.ipcRenderer.send('invoke-menu-item', 'zebra');
+                    } else {
+                        window.open("https://maxlifespan.com/")
+                    }
+                });
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+
+
+@*         
+private ToolStripMenuItem tsmiImportTransactionsFromCSV;
+private ToolStripMenuItem tsmiImportTransactionsFromXLS;
+private ToolStripMenuItem tsmiImportTransactionsFromPDF;
+
+private ToolStripMenuItem tsmiQIF;
+private ToolStripSeparator toolStripSeparator7;
+private ToolStripMenuItem tsmiOFXQFX;
+
+private ToolStripMenuItem tsmiManage;
+private ToolStripMenuItem tsmiManageCompany;
+private ToolStripMenuItem tsmiManageAccounts;
+private ToolStripMenuItem tsmiManageTransactions;
+private ToolStripMenuItem tsmiManageCategories;
+private ToolStripMenuItem tsmiManageVendors;
+private ToolStripMenuItem tsmiManageEmployees;
+private ToolStripMenuItem tsmiManageInvoices;
+private ToolStripMenuItem tsmiBanking;
+private ToolStripMenuItem tsmiBankingBankAccounts;
+private ToolStripMenuItem bankTransactionsToolStripMenuItem;
+private ToolStripMenuItem transfersToolStripMenuItem;
+private ToolStripMenuItem depositsToolStripMenuItem;
+private ToolStripMenuItem paymentsToolStripMenuItem;
+private ToolStripMenuItem bankFeedsToolStripMenuItem;
+private ToolStripMenuItem tsmiReports;
+private ToolStripMenuItem tsmiTools;
+private ToolStripMenuItem tsmiToolsSettings;
+private ToolStripMenuItem tsmiToolsDataBackup;
+private ToolStripMenuItem tsmiToolsImportExport;
+private ToolStripMenuItem tsmiToolsCalculators;
+private ToolStripMenuItem tsmiToolsUtilities;
+private ToolStripMenuItem tsmiPreferences;
+private ToolStripMenuItem tsmiPreferencesLightTheme;
+private ToolStripMenuItem tsmiPreferencesDarkTheme;
+private ToolStripMenuItem tsmiHelp;
+private ToolStripMenuItem totorialConceptsGuideToolStripMenuItem;
+private ToolStripMenuItem videosMoviesToolStripMenuItem;
+private ToolStripMenuItem contentsToolStripMenuItem;
+private ToolStripMenuItem searchToolStripMenuItem;
+private ToolStripSeparator toolStripSeparator5;
+private ToolStripMenuItem tsmiHelpAbout; 
+*@
+
+
+
+
+
+
+

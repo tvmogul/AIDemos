@@ -1,0 +1,205 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Text.Json
+@using Microsoft.JSInterop
+@using Newtonsoft.Json
+@*@inject IJSRuntime JSRuntime*@
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using System.Collections.Generic
+
+@{
+    var scriptNonce = Html.ScriptNonce();
+    //var styleNonce = Html.StyleNonce();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/css/site.css" asp-append-version="true" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="/lib/datatables/dataTables.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/autoFill.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/buttons.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/colReorder.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/dataTables.dateTime.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/fixedHeader.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/keyTable.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/responsive.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/rowGroup.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/rowReorder.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/scroller.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/searchBuilder.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/searchPanes.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/select.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/lib/datatables/stateRestore.bootstrap5.min.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="/css/hover.css" asp-append-version="true" />
+    <link rel="stylesheet" href="/css/buttons.css" asp-append-version="true" />
+
+    <style>
+        /* ====================================================
+            Scrollbar Gray class="flexcroll-gray flex flex-col h-screen"
+            ======================================================*/
+        .flexcroll-gray {
+            scrollbar-face-color: #367CD2;
+            scrollbar-shadow-color: #FFFFFF;
+            scrollbar-highlight-color: #FFFFFF;
+            scrollbar-3dlight-color: #FFFFFF;
+            scrollbar-darkshadow-color: #FFFFFF;
+            scrollbar-track-color: #FFFFFF;
+            scrollbar-arrow-color: #FFFFFF;
+        }
+
+        .flexcroll-gray::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .flexcroll-gray::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        .flexcroll-gray::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgb(206,220,231);
+            background: -moz-linear-gradient(top, rgba(206,220,231,1) 0%, rgba(89,106,114,1) 65%);
+            background: -webkit-linear-gradient(top, rgba(206,220,231,1) 0%,rgba(89,106,114,1) 65%);
+            background: linear-gradient(to bottom, rgba(206,220,231,1) 0%,rgba(89,106,114,1) 65%);
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cedce7', endColorstr='#596a72',GradientType=0 );
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        /* ====================================================
+            Scrollbar White class="flexcroll-white flex flex-col h-screen"
+            ======================================================*/
+        .flexcroll-white {
+            scrollbar-face-color: #FFFFFF;
+            scrollbar-shadow-color: #FFFFFF;
+            scrollbar-highlight-color: #FFFFFF;
+            scrollbar-3dlight-color: #FFFFFF;
+            scrollbar-darkshadow-color: #FFFFFF;
+            scrollbar-track-color: #FFFFFF;
+            scrollbar-arrow-color: #FFFFFF;
+        }
+
+       .flexcroll-white::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .flexcroll-white::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+        }
+
+        .flexcroll-white::-webkit-scrollbar-thumb {
+            -webkit-border-radius: 10px;
+            border-radius: 10px;
+            background: rgb(255,255,255);
+            background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(220,220,220,1) 65%);
+            background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(220,220,220,1) 65%);
+            background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(220,220,220,1) 65%);
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#dcdcdc',GradientType=0 );
+            -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
+        }
+
+        .cool-gray {
+            background-color: #7c8894;
+            color: white !important;
+        }
+
+        .cool-lightgray {
+            background-color: #ebedf1;
+            color: black !important;
+        }
+
+        .cool-green {
+            background-color: #80b1a0;
+            color: white !important;
+        }
+
+        .grad_white {
+            /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#ffffff+0,f6f6f6+47,ededed+100;White+3D+%231 */
+            background: linear-gradient(to bottom, #ffffff 0%,#f6f6f6 47%,#ededed 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+            padding: 0px 0px 2px 0px !important;
+        }
+
+        .grad_blue {
+            /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#f2f5f6+0,e3eaed+37,c8d7dc+100;Grey+3D+%234 */
+            background: linear-gradient(to bottom, #f2f5f6 0%,#e3eaed 37%,#c8d7dc 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+            padding: 0px 0px 2px 0px !important;
+        }
+    </style>
+
+
+</head>
+<body class="flexcroll-white flex flex-col h-screen grad_blue">
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="/lib/jquery/dist/jquery.min.js" nonce="@scriptNonce"></script>
+    <script src="/lib/bootstrap/dist/js/bootstrap.bundle.min.js" nonce="@scriptNonce"></script>
+
+    @* DO NOT INCLUDE THESE BECAUSE THEY CAUSE MANY ISSUES!!! *@
+    @* <link rel="stylesheet" href="/lib/datatables/fixedColumns.bootstrap5.min.css" nonce="@scriptNonce" asp-append-version="true" /> *@
+    @* <script src="/lib/datatables/fixedColumns.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script> *@
+
+    <!-- Required for Excel and PDF export -->
+    <script src="/lib/datatables/jszip.min.js" nonce="@scriptNonce"></script>
+    <script src="/lib/datatables/pdfmake.min.js" nonce="@scriptNonce"></script>
+    <script src="/lib/datatables/vfs_fonts.js" nonce="@scriptNonce"></script>
+    <script src="/lib/datatables/dataTables.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.buttons.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.colVis.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.html5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/buttons.print.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+
+    <script src="/lib/datatables/dataTables.autoFill.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/autoFill.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.colReorder.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/colReorder.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.fixedColumns.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.dateTime.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    @* <script src="/lib/datatables/fixedColumns.bootstrap5.min.js"nonce="@scriptNonce" asp-append-version="true"></script> *@
+    <script src="/lib/datatables/dataTables.fixedHeader.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/fixedHeader.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.keyTable.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/keyTable.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.responsive.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/responsive.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.rowGroup.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/rowGroup.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.rowReorder.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/rowReorder.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.scroller.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/scroller.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.searchBuilder.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/searchBuilder.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.searchPanes.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/searchPanes.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.select.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/select.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/dataTables.stateRestore.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/datatables/stateRestore.bootstrap5.min.js" nonce="@scriptNonce" asp-append-version="true"></script>
+
+    <script src="/lib/fabric.js/fabric.js" nonce="@scriptNonce" asp-append-version="true"></script>
+    <script src="/lib/tagcanvas/tagcanvas.js" nonce="@scriptNonce" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
